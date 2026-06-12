@@ -1,91 +1,72 @@
-/*
-Classroom Attendance System
+class Classroom {
+    private boolean attendanceStarted = false;
 
-Teacher thread:
+    public synchronized void waitForAttendance() {
+        while (!attendanceStarted) {
+            try {
+                System.out.println(Thread.currentThread().getName() + " Waiting...");
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(Thread.currentThread().getName() + " Marked Present");
+    }
 
-Takes attendance
+    public synchronized void startAttendance() {
+        attendanceStarted = true;
+        System.out.println("Teacher Started Attendance");
+        notifyAll();
+    }
+}
 
-Student thread:
+class TeacherThread extends Thread {
+    Classroom classroom;
 
-Waits until attendance starts
-Requirements
-Students should not proceed immediately.
-Students must wait.
-Teacher gives signal.
-Students continue after signal.
+    TeacherThread(Classroom classroom) {
+        this.classroom = classroom;
+    }
 
-Expected Flow:
+    public void run() {
+        classroom.startAttendance();
+    }
+}
 
-Student Waiting...
+class StudentThread extends Thread {
+    Classroom classroom;
 
-Teacher Started Attendance
+    StudentThread(Classroom classroom, String name) {
+        this.classroom = classroom;
+        setName(name);
+    }
 
-Student Marked Present
-Concepts Tested
-wait()
-notifyAll()
-
-
-Instructions - 
-Create Class Classroom
-
-    Variable:
-        attendanceStarted = false
-
-    synchronized method waitForAttendance()
-
-        While attendanceStarted is false
-
-            Print:
-                "Student Waiting..."
-
-            wait()
-
-        Print:
-            "Student Marked Present"
-
-
-    synchronized method startAttendance()
-
-        attendanceStarted = true
-
-        Print:
-            "Teacher Started Attendance"
-
-        notifyAll()
+    public void run() {
+        classroom.waitForAttendance();
+    }
+}
 
 
-Create Class TeacherThread
 
-    Classroom classroom
+public class Main {
+	public static void main(String[] args) {
+        Classroom classroom = new Classroom();
 
-    run()
+        StudentThread s1 = new StudentThread(classroom, "Student 1");
+        StudentThread s2 = new StudentThread(classroom, "Student 2");
+        StudentThread s3 = new StudentThread(classroom, "Student 3");
 
-        classroom.startAttendance()
+        TeacherThread teacher = new TeacherThread(classroom);
 
+        s1.start();
+        s2.start();
+        s3.start();
 
-Create Class StudentThread
+        try {
+            Thread.sleep(3000); // Wait for a few seconds
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-    Classroom classroom
-
-    run()
-
-        classroom.waitForAttendance()
-
-
-Main Method
-
-    Create Classroom object
-
-    Create multiple Student threads
-
-    Create Teacher thread
-
-    Start Student threads
-
-    Wait for a few seconds
-
-    Start Teacher thread
-Thread Coordination
-Synchronization
-*/
+        teacher.start();
+    }
+}
